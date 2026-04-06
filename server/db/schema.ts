@@ -91,8 +91,7 @@ export const aiSettings = sqliteTable('ai_settings', {
   isDefault: integer('is_default', { mode: 'boolean' }).default(false).notNull(),
   ...timestamps
 }, table => [
-  index('ai_settings_user_id_idx').on(table.userId),
-  uniqueIndex('ai_settings_user_default_idx').on(table.userId, table.isDefault)
+  index('ai_settings_user_id_idx').on(table.userId)
 ])
 
 export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({

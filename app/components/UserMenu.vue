@@ -20,6 +20,10 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     alt: user.value?.name || user.value?.username
   }
 }], [{
+  label: 'AI Settings',
+  icon: 'i-lucide-cpu',
+  to: '/settings'
+}, {
   label: 'Theme',
   icon: 'i-lucide-palette',
   children: [{
