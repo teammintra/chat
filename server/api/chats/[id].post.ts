@@ -10,7 +10,7 @@ import type { GoogleLanguageModelOptions } from '@ai-sdk/google'
 import type { OpenAILanguageModelResponsesOptions } from '@ai-sdk/openai'
 import { openai } from '@ai-sdk/openai'
 import { MODELS } from '#shared/utils/models'
-import { getModelFromProvider, getProviderFromModel } from '~/server/utils/providers'
+import { getModelFromProvider, getProviderFromModel } from '#server/utils/providers'
 
 defineRouteMeta({
   openAPI: {

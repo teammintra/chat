@@ -1,7 +1,6 @@
 import { anthropic } from '@ai-sdk/anthropic'
 import { openai } from '@ai-sdk/openai'
 import { google } from '@ai-sdk/google'
-import { groq } from '@ai-sdk/groq'
 
 export interface ProviderConfig {
   provider: string
@@ -34,8 +33,10 @@ export function getModelFromProvider(config: ProviderConfig) {
       })
 
     case 'groq':
-      return groq(model, {
-        apiKey: apiKey || process.env.GROQ_API_KEY
+      // Groq uses OpenAI-compatible API
+      return openai(model, {
+        apiKey: apiKey || process.env.GROQ_API_KEY,
+        baseURL: customEndpoint || 'https://api.groq.com/openai/v1'
       })
 
     case 'openrouter':
