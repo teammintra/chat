@@ -9,7 +9,6 @@ import type { GoogleLanguageModelOptions } from '@ai-sdk/google'
 // import { google } from '@ai-sdk/google'
 import type { OpenAILanguageModelResponsesOptions } from '@ai-sdk/openai'
 import { openai } from '@ai-sdk/openai'
-import { MODELS } from '#shared/utils/models'
 import { getModelFromProvider, getProviderFromModel } from '#server/utils/providers'
 
 defineRouteMeta({
@@ -27,9 +26,7 @@ export default defineEventHandler(async (event) => {
   }).parse)
 
   const { model, messages } = await readValidatedBody(event, z.object({
-    model: z.string().refine(value => MODELS.some(m => m.value === value), {
-      message: 'Invalid model'
-    }),
+    model: z.string().min(1),
     messages: z.array(z.custom<UIMessage>())
   }).parse)
 
@@ -92,9 +89,13 @@ export default defineEventHandler(async (event) => {
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       const dynamicModel = getModelFromProvider(modelConfig)
+      const effectiveProvider = modelConfig.provider
 
       const result = streamText({
         model: dynamicModel,
+        temperature: modelConfig.temperature ?? 0.7,
+        topP: modelConfig.topP ?? 0.9,
+        maxTokens: modelConfig.maxTokens ?? 4096,
         system: `You are a knowledgeable and helpful AI assistant. ${session.user?.username ? `The user's name is ${session.user.username}.` : ''} Your goal is to provide clear, accurate, and well-structured responses.
 
 **FORMATTING RULES (CRITICAL):**
@@ -121,8 +122,8 @@ export default defineEventHandler(async (event) => {
         tools: {
           chart: chartTool,
           weather: weatherTool,
-          ...(model.startsWith('anthropic/') && { web_search: anthropic.tools.webSearch_20250305() }),
-          ...(model.startsWith('openai/') && { web_search: openai.tools.webSearch() })
+          ...(effectiveProvider === 'anthropic' && { web_search: anthropic.tools.webSearch_20250305() }),
+          ...(effectiveProvider === 'openai' && { web_search: openai.tools.webSearch() })
           // TODO: enable once AI SDK supports combining provider-defined tools with custom tools
           // ...(model.startsWith('google/') && { google_search: google.tools.googleSearch({}) })
         },

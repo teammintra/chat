@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, real, index, uniqueIndex, primaryKey } from 'drizzle-orm/sqlite-core'
 import { relations } from 'drizzle-orm'
 
 const timestamps = {
@@ -83,12 +83,13 @@ export const aiSettings = sqliteTable('ai_settings', {
   provider: text('provider').notNull(),
   model: text('model').notNull(),
   apiKey: text('api_key').notNull(),
-  temperature: integer('temperature').default(0).notNull(),
-  topP: integer('top_p').default(1).notNull(),
+  temperature: real('temperature').default(0.7).notNull(),
+  topP: real('top_p').default(0.9).notNull(),
   maxTokens: integer('max_tokens').default(4096).notNull(),
   customEndpoint: text('custom_endpoint'),
   customSettings: text('custom_settings', { mode: 'json' }),
   isDefault: integer('is_default', { mode: 'boolean' }).default(false).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
   ...timestamps
 }, table => [
   index('ai_settings_user_id_idx').on(table.userId)
