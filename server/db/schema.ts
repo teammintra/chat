@@ -19,7 +19,8 @@ export const users = sqliteTable('users', {
 ])
 
 export const usersRelations = relations(users, ({ many }) => ({
-  chats: many(chats)
+  chats: many(chats),
+  aiSettings: many(aiSettings)
 }))
 
 export const chats = sqliteTable('chats', {
@@ -73,5 +74,30 @@ export const votesRelations = relations(votes, ({ one }) => ({
   message: one(messages, {
     fields: [votes.messageId],
     references: [messages.id]
+  })
+}))
+
+export const aiSettings = sqliteTable('ai_settings', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(),
+  model: text('model').notNull(),
+  apiKey: text('api_key').notNull(),
+  temperature: integer('temperature').default(0).notNull(),
+  topP: integer('top_p').default(1).notNull(),
+  maxTokens: integer('max_tokens').default(4096).notNull(),
+  customEndpoint: text('custom_endpoint'),
+  customSettings: text('custom_settings', { mode: 'json' }),
+  isDefault: integer('is_default', { mode: 'boolean' }).default(false).notNull(),
+  ...timestamps
+}, table => [
+  index('ai_settings_user_id_idx').on(table.userId),
+  uniqueIndex('ai_settings_user_default_idx').on(table.userId, table.isDefault)
+])
+
+export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [aiSettings.userId],
+    references: [users.id]
   })
 }))

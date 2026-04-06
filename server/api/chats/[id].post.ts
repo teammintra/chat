@@ -9,6 +9,8 @@ import type { GoogleLanguageModelOptions } from '@ai-sdk/google'
 // import { google } from '@ai-sdk/google'
 import type { OpenAILanguageModelResponsesOptions } from '@ai-sdk/openai'
 import { openai } from '@ai-sdk/openai'
+import { MODELS } from '#shared/utils/models'
+import { getModelFromProvider, getProviderFromModel } from '~/server/utils/providers'
 
 defineRouteMeta({
   openAPI: {
@@ -44,6 +46,24 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
   }
 
+  // Get user's AI settings for this model
+  const provider = getProviderFromModel(model)
+  let userSettings = await db.query.aiSettings.findFirst({
+    where: (t) => eq(t.userId, session.user?.id || session.id)
+  })
+
+  // Fallback to environment variables if no user settings exist
+  const modelConfig = {
+    provider,
+    model,
+    apiKey: userSettings?.apiKey,
+    customEndpoint: userSettings?.customEndpoint,
+    temperature: userSettings?.temperature,
+    topP: userSettings?.topP,
+    maxTokens: userSettings?.maxTokens,
+    customSettings: userSettings?.customSettings ? JSON.parse(userSettings.customSettings as any) : undefined
+  }
+
   if (!chat.title) {
     const { text: title } = await generateText({
       model: 'openai/gpt-4.1-nano',
@@ -71,8 +91,10 @@ export default defineEventHandler(async (event) => {
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
+      const dynamicModel = getModelFromProvider(modelConfig)
+
       const result = streamText({
-        model,
+        model: dynamicModel,
         system: `You are a knowledgeable and helpful AI assistant. ${session.user?.username ? `The user's name is ${session.user.username}.` : ''} Your goal is to provide clear, accurate, and well-structured responses.
 
 **FORMATTING RULES (CRITICAL):**
